@@ -17,7 +17,28 @@ const startOverlayEl = document.getElementById("startOverlay");
 const helpButton = document.getElementById("helpButton");
 const helpModal = document.getElementById("helpModal");
 const closeHelp = document.getElementById("closeHelp");
+const handSwapToggleEl = document.getElementById("handSwapToggle");
 
+let handSwapEnabled = false;
+
+function getHandRoleConfig() {
+  return handSwapEnabled
+    ? { chord: "Right", expression: "Left" }
+    : { chord: "Left", expression: "Right" };
+}
+
+function updateHandSwapToggle() {
+  if (!handSwapToggleEl) return;
+
+  handSwapToggleEl.classList.toggle("active", handSwapEnabled);
+  handSwapToggleEl.textContent = `Switched Hands: ${handSwapEnabled ? "On" : "Off"}`;
+  handSwapToggleEl.setAttribute("aria-pressed", String(handSwapEnabled));
+}
+
+handSwapToggleEl.addEventListener("click", () => {
+  handSwapEnabled = !handSwapEnabled;
+  updateHandSwapToggle();
+});
 
 // ---- Finger landmark indices ----
 const FINGERS = {
@@ -766,45 +787,44 @@ let rawMode = true;
 let rawQualityIndex = 0;
 let rawThumbDown = false;
 
+const { chord: chordHand, expression: expressionHand } = getHandRoleConfig();
+const chordLandmarks = chordHand === "Left" ? cachedLeftLandmarks : cachedRightLandmarks;
+const expressionLandmarks = expressionHand === "Left" ? cachedLeftLandmarks : cachedRightLandmarks;
 
-// LEFT HAND = ROOT CHORD
+if (chordLandmarks) {
 
-if (cachedLeftLandmarks) {
-
-  const leftTilt =
+  const chordTilt =
     getHandHorizontalTilt(
-      cachedLeftLandmarks,
-      "Left"
+      chordLandmarks,
+      chordHand
     );
 
 
   rawChord =
     classifyChord(
-      cachedLeftLandmarks,
-      "Left"
+      chordLandmarks,
+      chordHand
     );
 
 
   rawMode =
-    leftTilt >= 0;
+    chordTilt >= 0;
 
 }
 
 
-// RIGHT HAND = VOICING
-
-if (cachedRightLandmarks) {
+if (expressionLandmarks) {
 
   rawQualityIndex =
     getRightHandQualityIndex(
-      cachedRightLandmarks
+      expressionLandmarks
     );
 
 
   rawThumbDown =
     isThumbExtended(
-      cachedRightLandmarks,
-      "Right"
+      expressionLandmarks,
+      expressionHand
     );
 
 }
@@ -911,11 +931,11 @@ if (rawChord) {
   // 5. AUDIO ENGINE
   // ============================
 
-  if (cachedRightLandmarks) {
+  if (expressionLandmarks) {
 
     const currentVolume =
       getVolumeFromHeight(
-        cachedRightLandmarks
+        expressionLandmarks
       );
 
 
@@ -924,8 +944,8 @@ if (rawChord) {
 
     const horizontalTilt =
       getHandHorizontalTilt(
-        cachedRightLandmarks,
-        "Right"
+        expressionLandmarks,
+        expressionHand
       );
 
 
@@ -1007,18 +1027,18 @@ if (rawChord) {
   // ============================
 
   const volume =
-    cachedRightLandmarks
+    expressionLandmarks
       ? getVolumeFromHeight(
-          cachedRightLandmarks
+          expressionLandmarks
         )
       : 0;
 
 
   const tilt =
-    cachedRightLandmarks
+    expressionLandmarks
       ? getHandHorizontalTilt(
-          cachedRightLandmarks,
-          "Right"
+          expressionLandmarks,
+          expressionHand
         )
       : 0;
 

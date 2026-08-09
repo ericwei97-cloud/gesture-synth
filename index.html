@@ -42,6 +42,28 @@ html, body {
   z-index: 6;
 }
 
+#handSwapToggle {
+  position: absolute;
+  top: 86px;
+  left: 12px;
+  background: #1a1a1a;
+  color: #e8a13d;
+  border: 1px solid #3a3428;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+  padding: 4px 8px;
+  cursor: pointer;
+  z-index: 5;
+  line-height: 1.4;
+}
+
+#handSwapToggle.active {
+  background: rgba(232, 161, 61, 0.18);
+  border-color: #e8a13d;
+  box-shadow: 0 0 12px rgba(232, 161, 61, 0.35);
+}
+
 #helpModal.hidden {
   display: none;
 }
@@ -243,6 +265,7 @@ html, body {
   </select>
   <div id="qualityDisplay">--</div>
   <div id="distortionDisplay">Filter: 0%</div>
+  <button id="handSwapToggle" type="button" aria-pressed="false">Switched Hands: Off</button>
 
   <button id="helpButton">?</button>
 
