@@ -116,6 +116,55 @@ html, body {
   padding: 4px 8px;
   z-index: 5;
 }
+
+#guideToggle {
+  position: absolute;
+  top: 90px;
+  left: 12px;
+  background: #1a1a1a;
+  color: #e8a13d;
+  border: 1px solid #3a3428;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+  padding: 4px 8px;
+  cursor: pointer;
+  z-index: 5;
+}
+
+#gestureGuide {
+  position: absolute;
+  top: 128px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 5;
+  font-family: monospace;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(20,20,20,0.85), rgba(20,20,20,0.55));
+}
+
+#gestureGuide.hidden {
+  display: none;
+}
+
+.gesture-guide-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gesture-guide-note {
+  width: 28px;
+  color: #e8a13d;
+  font-size: 14px;
+}
+
+.gesture-guide-gesture {
+  font-size: 20px;
+}
 #chordDisplay {
   position: absolute;
   bottom: 35px;
@@ -235,12 +284,15 @@ html, body {
   <option value="369.99" data-note="Gb">F#/Gb</option>
   <option value="392.00" data-note="G">G</option>
   <option value="415.30" data-note="Ab">G#/Ab</option>
-  </select>
-  <select id="toneSelect">
+</select>
+
+<select id="toneSelect">
   <option value="triangle" selected>Warm Synth</option>
   <option value="sawtooth">Bright Synth</option>
   <option value="square">Retro Synth</option>
-  </select>
+</select>
+<button id="guideToggle">Open Guide</button>
+<div id="gestureGuide" class="hidden"></div>
   <div id="qualityDisplay">--</div>
   <div id="distortionDisplay">Filter: 0%</div>
 

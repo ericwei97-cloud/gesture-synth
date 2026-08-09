@@ -8,6 +8,8 @@ const videoEl = document.getElementById("webcam");
 const canvasEl = document.getElementById("overlay");
 const ctx = canvasEl.getContext("2d");
 
+const gestureGuideEl = document.getElementById("gestureGuide");
+const guideToggleEl = document.getElementById("guideToggle");
 const chordDisplayEl = document.getElementById("chordDisplay");
 const volumeBarEls = Array.from(document.querySelectorAll(".vol-bar"));
 const qualityDisplayEl = document.getElementById("qualityDisplay");
@@ -17,7 +19,6 @@ const startOverlayEl = document.getElementById("startOverlay");
 const helpButton = document.getElementById("helpButton");
 const helpModal = document.getElementById("helpModal");
 const closeHelp = document.getElementById("closeHelp");
-
 
 // ---- Finger landmark indices ----
 const FINGERS = {
@@ -358,6 +359,52 @@ async function setupHandLandmarker() {
   });
 }
 
+// ADD THIS
+const GESTURE_GUIDE = [
+  { degree: 1, gesture: "1️⃣" },
+  { degree: 2, gesture: "2️⃣" },
+  { degree: 3, gesture: "3️⃣" },
+  { degree: 4, gesture: "4️⃣" },
+  { degree: 5, gesture: "5️⃣" },
+  { degree: 6, gesture: "🤘" },
+  { degree: 7, gesture: "🤟" }
+];
+
+const MAJOR_SCALE = {
+  A:  ["A","B","C#","D","E","F#","G#"],
+  Bb: ["Bb","C","D","Eb","F","G","A"],
+  B:  ["B","C#","D#","E","F#","G#","A#"],
+  C:  ["C","D","E","F","G","A","B"],
+  Db: ["Db","Eb","F","Gb","Ab","Bb","C"],
+  D:  ["D","E","F#","G","A","B","C#"],
+  Eb: ["Eb","F","G","Ab","Bb","C","D"],
+  E:  ["E","F#","G#","A","B","C#","D#"],
+  F:  ["F","G","A","Bb","C","D","E"],
+  Gb: ["Gb","Ab","Bb","Cb","Db","Eb","F"],
+  G:  ["G","A","B","C","D","E","F#"],
+  Ab: ["Ab","Bb","C","Db","Eb","F","G"]
+};
+
+function updateGestureGuide() {
+  if (!gestureGuideEl) return;
+
+  const scale = MAJOR_SCALE[currentKeyName];
+
+  gestureGuideEl.innerHTML = GESTURE_GUIDE
+    .map(({ degree, gesture }) => `
+      <div class="gesture-guide-row">
+        <span class="gesture-guide-note">
+          ${scale[degree - 1]}
+        </span>
+
+        <span class="gesture-guide-gesture">
+          ${gesture}
+        </span>
+      </div>
+    `)
+    .join("");
+}
+
 // ---- Chord -> note frequencies ----
 // Semitone offset of each scale degree from the tonic, in a major scale.
 // This stays fixed -- what changes is which frequency counts as "0".
@@ -370,13 +417,16 @@ let currentTonicFreq = Number(keySelectEl.value);
 let currentKeyName =
   keySelectEl.selectedOptions[0].dataset.note;
 
+  updateGestureGuide();
 
-keySelectEl.addEventListener("change", () => {
+  keySelectEl.addEventListener("change", () => {
 
   currentTonicFreq = Number(keySelectEl.value);
 
   currentKeyName =
     keySelectEl.selectedOptions[0].dataset.note;
+
+  updateGestureGuide();
 
 });
 
@@ -405,21 +455,17 @@ function getDegreeFreq(degree) {
   return tonic * Math.pow(2, semitones / 12);
 }
 
-const NUMERAL_TO_DEGREE = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7 };
-const MAJOR_SCALE = {
-  A:  ["A","B","C#","D","E","F#","G#"],
-  Bb: ["Bb","C","D","Eb","F","G","A"],
-  B:  ["B","C#","D#","E","F#","G#","A#"],
-  C:  ["C","D","E","F","G","A","B"],
-  Db: ["Db","Eb","F","Gb","Ab","Bb","C"],
-  D:  ["D","E","F#","G","A","B","C#"],
-  Eb: ["Eb","F","G","Ab","Bb","C","D"],
-  E:  ["E","F#","G#","A","B","C#","D#"],
-  F:  ["F","G","A","Bb","C","D","E"],
-  Gb: ["Gb","Ab","Bb","Cb","Db","Eb","F"],
-  G:  ["G","A","B","C","D","E","F#"],
-  Ab: ["Ab","Bb","C","Db","Eb","F","G"]
+const NUMERAL_TO_DEGREE = {
+  I: 1,
+  II: 2,
+  III: 3,
+  IV: 4,
+  V: 5,
+  VI: 6,
+  VII: 7
 };
+
+
 
 function getChordName(roman, isMajorMode) {
 
@@ -623,6 +669,11 @@ startOverlayEl.addEventListener("click", () => {
   synth.ensureContext();
   startOverlayEl.style.display = "none";
   canvasEl.classList.remove("dimmed");
+});
+
+guideToggleEl.addEventListener("click", () => {
+  const isHidden = gestureGuideEl.classList.toggle("hidden");
+  guideToggleEl.textContent = isHidden ? "Open Guide" : "Close Guide";
 });
 
 helpButton.addEventListener("click", () => {
