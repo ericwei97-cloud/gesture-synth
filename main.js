@@ -657,7 +657,12 @@ class SynthEngine {
 
   stop() {
     this.setVolume(0);
-    this.oscillators.forEach((osc) => { try { osc.stop(); } catch {} });
+    this.oscillators.forEach((osc) => {
+      try {
+        osc.stop();
+        osc.disconnect();
+      } catch {}
+    });
     this.oscillators = [];
     this.currentKey = null;
   }
@@ -916,7 +921,6 @@ if (rawChord) {
   // ============================
 
   if (currentChord) {
-
   const chordName =
     getChordName(
       currentChord,
@@ -925,8 +929,9 @@ if (rawChord) {
 
   chordDisplayEl.textContent =
     `${chordName}(${currentChord})`;
-
-}
+  } else {
+    chordDisplayEl.textContent = "--";
+  }
 
 
   const MAJOR_LABELS = {
