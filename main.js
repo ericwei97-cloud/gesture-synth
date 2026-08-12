@@ -1,13 +1,4 @@
 import { HandLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
-import { inject, track } from "@vercel/analytics"; //to measure visits
-//import { SpeedInsights } from "@vercel/speed-insights/next" //to measure speed insights
-inject();
-
-// ---- Analytics ----
-let cameraStartedTracked = false;
-let firstSoundTracked = false;
-let chordCount = 0;
-let lastTrackedChord = null;
 
 // ---- DOM references ----
 const videoEl = document.getElementById("webcam");
@@ -1045,19 +1036,6 @@ if (rawChord) {
 
 
       synth.playNotes(notes);
-        if (!firstSoundTracked) {
-          track("first_sound");
-          firstSoundTracked = true;
-        }
-
-        if (currentChord !== lastTrackedChord) {
-          chordCount++;
-          lastTrackedChord = currentChord;
-
-          track("chord_count", {
-            count: chordCount
-          });
-        }
       synth.setVolume(
         currentVolume
       );
