@@ -12,6 +12,12 @@ const volumeBarEls = Array.from(document.querySelectorAll(".vol-bar"));
 const qualityDisplayEl = document.getElementById("qualityDisplay");
 const startOverlayEl = document.getElementById("startOverlay");
 
+function trackClarityEvent(eventName) {
+  if (typeof window.clarity === "function") {
+    window.clarity("event", eventName);
+  }
+}
+
 // NEW
 const helpButton = document.getElementById("helpButton");
 const helpModal = document.getElementById("helpModal");
@@ -639,6 +645,12 @@ class SynthEngine {
 
   playNotes(freqs) {
     if (!this.ctx || freqs.length === 0) return;
+
+    if (!hasPlayedFirstSound) {
+      hasPlayedFirstSound = true;
+      trackClarityEvent("first_sound");
+    }
+
     const key = freqs.map((f) => f.toFixed(1)).join(",");
     if (key === this.currentKey) return;
 
@@ -669,6 +681,9 @@ class SynthEngine {
 
 const synth = new SynthEngine();
 
+let hasPlayedFirstSound = false;
+let lastTrackedChord = null;
+
 startOverlayEl.addEventListener("click", () => {
   synth.ensureContext();
   startOverlayEl.style.display = "none";
@@ -677,10 +692,16 @@ startOverlayEl.addEventListener("click", () => {
 
 guideToggleEl.addEventListener("click", () => {
   const isHidden = gestureGuideEl.classList.toggle("hidden");
+
+  if (!isHidden) {
+    trackClarityEvent("guide_opened");
+  }
+
   guideToggleEl.textContent = isHidden ? "Open Guide" : "Close Guide";
 });
 
 helpButton.addEventListener("click", () => {
+  trackClarityEvent("help_opened");
   helpModal.classList.remove("hidden");
 });
 
@@ -1011,6 +1032,14 @@ if (rawChord) {
       currentChord &&
       qualityIndex >= 1
     ) {
+
+      const chordTrackingKey =
+        `${currentChord}-${isMajorMode ? "major" : "minor"}-${qualityIndex}-${thumbDown ? "low" : "normal"}`;
+
+      if (chordTrackingKey !== lastTrackedChord) {
+        lastTrackedChord = chordTrackingKey;
+        trackClarityEvent("chord_changed");
+      }
 
       const tones =
         getChordTones(
