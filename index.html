@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<link rel="icon" type="image/png" href="/assets/gesture-synth-logo-optimized-CeZLKeCi.png" />
 <title>Gesture Synth</title>
 
 <script type="text/javascript">
-    (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-    })(window, document, "clarity", "script", "xzz1v75lj8");
+  (function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "xzz1v75lj8");
 </script>
 
 <style>
@@ -20,22 +21,495 @@ html, body {
   background: #111;
   overflow: hidden;
 }
+
 #stage {
   position: fixed;
   inset: 0;
   width: 100vw;
   height: 100dvh;
 }
+
 #webcam {
   display: none;
 }
+
 #overlay {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
 }
+
+/* =========================
+   MAIN UI
+========================= */
+
+#keySelect {
+  position: absolute;
+  top: 48px;
+  left: 12px;
+  box-sizing: border-box;
+  height: 30px;
+  background: #1a1a1a;
+  color: #e8a13d;
+  border: 1px solid #3a3428;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+  padding: 4px 6px;
+  z-index: 5;
+}
+
+#toneSelect {
+  position: absolute;
+  top: 84px;
+  left: 12px;
+  box-sizing: border-box;
+  height: 30px;
+  background: #1a1a1a;
+  color: #e8a13d;
+  border: 1px solid #3a3428;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+  padding: 4px 6px;
+  z-index: 5;
+}
+
+/* =========================
+   GUIDE
+========================= */
+
+#guideToggle {
+  position: absolute;
+  top: 120px;
+  left: 12px;
+  box-sizing: border-box;
+  height: 30px;
+
+  background: #1a1a1a;
+  color: #e8a13d;
+
+  border: 1px solid #3a3428;
+  border-radius: 4px;
+
+  font-family: monospace;
+  font-size: 14px;
+
+  padding: 4px 6px;
+
+  cursor: pointer;
+  z-index: 5;
+}
+
+#gestureGuide {
+  position: absolute;
+  top: 158px;
+  left: 12px;
+
+  display: flex;
+  gap: 6px;
+
+  z-index: 5;
+
+  font-family: monospace;
+}
+
+#gestureGuide.hidden {
+  display: none;
+}
+
+/* =========================
+   GUIDE PANELS
+========================= */
+
+.gesture-guide-panel {
+  width: 90px;
+  min-width: 90px;
+  max-width: 90px;
+
+  box-sizing: border-box;
+  padding: 6px;
+
+  border-radius: 7px;
+
+  background: linear-gradient(
+    135deg,
+    rgba(20,20,20,0.85),
+    rgba(20,20,20,0.55)
+  );
+
+  overflow: hidden;
+}
+
+.gesture-guide-panel:nth-child(2) {
+  position: fixed;
+  top: 158px;
+  right: 12px;
+}
+
+#songTutorialToggleButton {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 6;
+  box-sizing: border-box;
+  height: 30px;
+  padding: 4px 6px;
+  border: 1px solid #3a3428;
+  border-radius: 4px;
+  background: #1a1a1a;
+  color: #e8a13d;
+  font: 14px monospace;
+  cursor: pointer;
+}
+
+#songTutorialToggleButton:hover {
+  background: #29241c;
+}
+
+.gesture-guide-title {
+  margin-bottom: 6px;
+
+  color: #777;
+
+  font-size: 10px;
+  font-weight: bold;
+
+  letter-spacing: 0.1em;
+}
+
+.gesture-guide-octave-title {
+  margin-top: 8px;
+}
+
+/* =========================
+   GUIDE ROWS
+========================= */
+
+.gesture-guide-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
+  min-height: 28px;
+
+  padding: 2px 5px;
+
+  box-sizing: border-box;
+
+  border-radius: 4px;
+
+  color: #aaa;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.gesture-guide-note {
+  color: #aaa;
+  font-size: 12px;
+}
+
+.gesture-guide-gesture {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.gesture-guide-icon {
+  display: block;
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+/* Right-hand text */
+
+.gesture-guide-label {
+  flex: 1;
+
+  margin-left: 6px;
+
+  color: #aaa;
+
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+/* =========================
+   ACTIVE STATES
+========================= */
+
+.gesture-guide-row.active {
+  background: rgba(232,161,61,0.18);
+  color: #e8a13d;
+}
+
+.gesture-guide-row.active .gesture-guide-note,
+.gesture-guide-row.active .gesture-guide-label {
+  color: #e8a13d;
+}
+
+.gesture-guide-row.active .gesture-guide-gesture {
+  opacity: 1;
+}
+
+/* =========================
+   MAJOR / MINOR
+========================= */
+
+.gesture-guide-tilt {
+  display: flex;
+  gap: 4px;
+
+  margin-top: 6px;
+}
+
+.gesture-guide-tilt-item {
+  flex: 1;
+
+  padding: 5px 2px;
+
+  box-sizing: border-box;
+
+  border-radius: 4px;
+
+  color: #aaa;
+
+  font-size: 10px;
+
+  text-align: center;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.gesture-guide-tilt-item.active {
+  background: rgba(232,161,61,0.18);
+  color: #e8a13d;
+}
+
+.gesture-guide-octave-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.gesture-guide-octave-item .gesture-guide-icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* =========================
+   SMALL SCREENS
+========================= */
+
+@media (max-width: 400px) {
+
+  #gestureGuide {
+    gap: 4px;
+  }
+
+  .gesture-guide-row {
+    display: flex;
+    align-items: center;
+
+    width: 100%;
+    min-width: 0;
+    min-height: 26px;
+
+    padding: 2px 2px;
+
+    box-sizing: border-box;
+    border-radius: 4px;
+
+    color: #aaa;
+
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
+  }
+  .gesture-guide-gesture {
+    flex-shrink: 0;
+
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .gesture-guide-label {
+    flex: 1;
+    min-width: 0;
+
+    margin-left: 3px;
+
+    color: #aaa;
+
+    font-size: 8px;
+    line-height: 1.05;
+
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .gesture-guide-note {
+    color: #aaa;
+    font-size: 10px;
+  }
+
+  .gesture-guide-gesture {
+    font-size: 17px;
+  }
+
+  .gesture-guide-icon {
+    width: 23px;
+    height: 23px;
+  }
+
+  .gesture-guide-tilt {
+    display: flex;
+    gap: 2px;
+    margin-top: 5px;
+  }
+
+  .gesture-guide-tilt-item {
+    flex: 1;
+
+    padding: 4px 1px;
+
+    box-sizing: border-box;
+    border-radius: 4px;
+
+    color: #aaa;
+
+    font-size: 8px;
+    text-align: center;
+
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
+  }
+}
+
+#chordDisplay {
+  position: absolute;
+  bottom: 75px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #e8a13d;
+  font-size: 42px;
+  font-family: monospace;
+  font-weight: bold;
+  text-shadow: 0 0 12px rgba(232,161,61,0.6);
+  pointer-events: none;
+}
+
+#volumeMeter {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  pointer-events: none;
+}
+
+#volumeBars {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 3px;
+}
+
+.vol-bar {
+  width: 70px;
+  height: 8px;
+  background: #3a3428;
+  border-radius: 2px;
+}
+
+.vol-bar.lit {
+  background: #e8a13d;
+}
+
+#volumeFixedLabel,
+#filterFixedLabel {
+  display: none;
+  color: #777;
+  font-family: monospace;
+  font-size: 12px;
+  text-align: right;
+}
+
+#filterFixedLabel {
+  position: absolute;
+  top: 30px;
+  right: 12px;
+}
+
+#distortionDisplay {
+  position: absolute;
+  top: 105px;
+  right: 12px;
+  color: #e8a13d;
+  font-family: monospace;
+  font-size: 14px;
+  text-align: right;
+  pointer-events: none;
+}
+
+/* LEFT HAND ONLY */
+body.one-handed #volumeFixedLabel,
+body.one-handed #filterFixedLabel {
+  display: block;
+}
+
+body.one-handed #distortionDisplay {
+  display: none;
+}
+
+body.one-handed #volumeBars {
+  display: none;
+}
+
+#qualityDisplay {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #e8a13d;
+  font-size: 12px;
+  font-family: monospace;
+  pointer-events: none;
+}
+
+.creator-credit {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: monospace;
+  font-size: 10px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  z-index: 5;
+  user-select: none;
+  text-align: right;
+}
+
+.creator-credit a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.creator-credit a:hover {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: underline;
+}
+
+/* =========================
+   HELP
+========================= */
+
 #helpButton {
   position: absolute;
   bottom: 16px;
@@ -43,7 +517,7 @@ html, body {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  border: 1px solid #e8a13d00;
+  border: 1px solid transparent;
   background: rgba(20,20,20,0.85);
   color: #e8a13d;
   font-size: 22px;
@@ -66,6 +540,7 @@ html, body {
 }
 
 .help-content {
+  position: relative;
   background: #1a1a1a;
   color: white;
   border: 1px solid #e8a13d;
@@ -77,18 +552,86 @@ html, body {
   font-family: monospace;
 }
 
+.privacy-link {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #888;
+}
+
 #closeHelp {
-  float: right;
-  background: none;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  margin: 0;
+  padding: 4px 8px;
+
+  background: #1a1a1a;
   border: none;
   color: #e8a13d;
+
   font-size: 20px;
   cursor: pointer;
+
+  z-index: 2;
 }
 
 .help-content h2,
 .help-content h3 {
   color: #e8a13d;
+}
+
+.help-mode {
+  margin: 20px 0 28px;
+  padding: 16px;
+  border: 1px solid #333;
+  border-radius: 8px;
+}
+
+.help-mode-label {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  background: #111;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.mode-button {
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #888;
+  font-family: monospace;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.mode-button.active {
+  background: #e8a13d;
+  color: #111;
+  font-weight: bold;
+}
+
+.mode-button:hover {
+  color: white;
+}
+
+.mode-button.active:hover {
+  color: #111;
+}
+
+.mode-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .help-content a {
@@ -99,278 +642,956 @@ html, body {
 .help-content a:hover {
   color: #ffbf5c;
 }
-#keySelect {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  background: #1a1a1a;
-  color: #e8a13d;
-  border: 1px solid #3a3428;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 14px;
-  padding: 4px 8px;
-  z-index: 5;
-}
-#toneSelect {
-  position: absolute;
-  top: 48px;
-  left: 12px;
-  background: #1a1a1a;
-  color: #e8a13d;
-  border: 1px solid #3a3428;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 14px;
-  padding: 4px 8px;
-  z-index: 5;
-}
 
-#guideToggle {
-  position: absolute;
-  top: 90px;
-  left: 12px;
-  background: #1a1a1a;
-  color: #e8a13d;
-  border: 1px solid #3a3428;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 14px;
-  padding: 4px 8px;
-  cursor: pointer;
-  z-index: 5;
-}
+/* =========================
+   LANDING SCREEN
+========================= */
 
-#gestureGuide {
-  position: absolute;
-  top: 128px;
-  left: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  z-index: 5;
-  font-family: monospace;
-  padding: 10px 14px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, rgba(20,20,20,0.85), rgba(20,20,20,0.55));
-}
-
-#gestureGuide.hidden {
-  display: none;
-}
-
-.gesture-guide-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.gesture-guide-note {
-  width: 28px;
-  color: #e8a13d;
-  font-size: 14px;
-}
-
-.gesture-guide-gesture {
-  font-size: 20px;
-}
-#chordDisplay {
-  position: absolute;
-  bottom: 35px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #e8a13d;
-  font-size: 42px;
-  font-family: monospace;
-  font-weight: bold;
-  text-shadow: 0 0 12px rgba(232, 161, 61, 0.6);
-  pointer-events: none;
-}
-#volumeMeter {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 3px;
-  pointer-events: none;
-}
-.vol-bar {
-  width: 70px;
-  height: 8px;
-  background: #3a3428;
-  border-radius: 2px;
-}
-.vol-bar.lit {
-  background: #e8a13d;
-}
-/* Add this style rule inside your <style> section */
-#distortionDisplay {
-  position: absolute;
-  top: 105px; /* Sits perfectly below your 8 volume bars */
-  right: 12px;
-  color: #e8a13d;
-  font-family: monospace;
-  font-size: 14px;
-  text-align: right;
-  pointer-events: none;
-}
-#qualityDisplay {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #e8a13d;
-  font-size: 12px;
-  font-family: monospace;
-  pointer-events: none;
-}
 #startOverlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  padding-bottom: 10vh;
-  gap: 16px;
-  cursor: pointer;
   z-index: 10;
-  box-sizing: border-box;
-}
 
-.start-circle {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+
+  padding: 24px;
+  box-sizing: border-box;
+
+  background: rgba(0,0,0,0.72);
+}
+
+.start-card {
+  width: min(520px,100%);
+  text-align: center;
+  font-family: monospace;
+}
+
+.start-eyebrow {
+  margin-bottom: 14px;
+  color: #e8a13d;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 0.16em;
+}
+
+.start-card h1 {
+  margin: 0;
+  color: #fff;
+  font-family: monospace;
+  font-size: clamp(32px,7vw,52px);
+  line-height: 1.05;
+}
+
+.start-description {
+  max-width: 440px;
+  margin: 22px auto 0;
+  color: #aaa;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.start-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 30px;
+}
+
+.start-button {
+  width: 150px;
+  box-sizing: border-box;
+  padding: 13px 22px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  font-family: monospace;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+#startOverlay.support-open #tutorialButton,
+#startOverlay.support-open #playNowButton {
+  opacity: 0.4;
+  transition: opacity 0.15s ease;
+}
+
+#startOverlay.support-open #tutorialButton:hover,
+#startOverlay.support-open #playNowButton:hover {
+  opacity: 1;
+}
+
+#startOverlay.support-open #supportButton {
+  border-color: #555;
+  background: #555;
+  color: #fff;
+}
+
+.start-button.primary {
+  border-color: #e8a13d;
+  color: #e8a13d;
+}
+
+.start-button.primary:hover {
+  background: #e8a13d;
   color: #111;
 }
 
-.start-text {
+.start-button.secondary:hover {
+  border-color: #fff;
+}
+
+.start-note {
+  margin-top: 18px;
+  color: #666;
+  font-size: 11px;
+}
+
+.support-panel {
+  margin-top: 18px;
+  padding: 16px 20px 12px;
+  border: 1px solid #3a3428;
+  border-radius: 8px;
+  background: rgba(17,17,17,0.9);
+}
+
+.support-panel[hidden] { display: none; }
+
+.support-panel p {
+  max-width: 440px;
+  margin: 0 0 16px;
+  color: #aaa;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 480px) {
+  .support-panel {
+    padding: 14px 12px 10px;
+  }
+
+  .support-panel p {
+    font-size: 12px;
+    line-height: 1.55;
+  }
+}
+
+.support-amounts {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.support-frequency-toggle {
+  display: block;
+  width: auto;
+  margin: 12px auto 0 0;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: #aaa;
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.support-frequency-toggle:hover {
+  color: #e8a13d;
+}
+
+.support-link {
+  text-decoration: none;
+}
+
+.support-status {
+  margin: 8px 0 0 !important;
+  color: #e8a13d !important;
+}
+
+.support-status:empty { display: none; }
+
+.support-link.suggested {
+  border-color: #555;
   color: #fff;
+}
+
+/* =========================
+   TUTORIAL
+========================= */
+
+#tutorialOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+  box-sizing: border-box;
+
+  background: rgba(0,0,0,0.50);
+
   font-family: monospace;
-  font-size: 16px;
-  letter-spacing: 0.05em;
+}
+
+#tutorialOverlay.hidden {
+  display: none;
+}
+
+.sound-help {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+
+  z-index: 18;
+
+  width: min(340px, calc(100vw - 48px));
+  box-sizing: border-box;
+
+  padding: 14px 16px;
+
+  background: rgba(20,20,20,0.95);
+  border: 1px solid #3a3428;
+  border-radius: 8px;
+
+  color: #aaa;
+  font-family: monospace;
+  font-size: 13px;
+  line-height: 1.5;
+
   text-align: center;
+}
+
+.sound-help a {
+  color: #e8a13d;
+}
+
+.sound-help a:hover {
+  color: #f2b653;
+}
+
+.sound-help strong {
+  color: #e8a13d;
+}
+
+.sound-help button {
+  margin-top: 10px;
+
+  padding: 6px 12px;
+
+  border: 1px solid #555;
+  border-radius: 5px;
+
+  background: transparent;
+  color: #e8a13d;
+
+  font-family: monospace;
+  font-size: 12px;
+
+  cursor: pointer;
+}
+
+.sound-help button:hover {
+  border-color: #e8a13d;
+}
+
+.tutorial-card {
+  width: min(520px,100%);
+  text-align: center;
+}
+
+.tutorial-eyebrow {
+  color: #e8a13d;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 0.16em;
+  margin-bottom: 10px;
+}
+
+#tutorialStep {
+  color: white;
+  font-size: 12px;
+  margin-bottom: 20px;
+}
+
+.tutorial-card h2 {
+  margin: 0;
+  color: white;
+  font-size: clamp(26px,6vw,40px);
+}
+
+#tutorialDescription {
+  max-width: 440px;
+  margin: 18px auto 0;
+  color: #aaa;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.tutorial-theory-table {
+  display: grid;
+  grid-template-columns: 50px repeat(7, 1fr);
+  gap: 3px;
+  margin-top: 14px;
+  padding: 7px 8px;
+  border: 1px solid #3a3428;
+  border-radius: 6px;
+  color: #aaa;
+  font-size: 11px;
+  align-items: center;
+}
+
+.tutorial-theory-table > div {
+  text-align: center;
+}
+
+.tutorial-theory-label {
+  color: #777;
+  font-size: 8px;
+  font-weight: bold;
+  text-align: left !important;
+  letter-spacing: 0.06em;
+}
+
+.tutorial-theory-target {
+  color: #e8a13d;
+  font-weight: bold;
+}
+
+#tutorialVisual {
+  margin-top: 28px;
+  padding: 20px;
+  border: 1px solid #e8a13d;
+  border-radius: 8px;
+  color: #e8a13d;
+  font-size: 15px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.tutorial-hand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.tutorial-hand span {
+  font-size: 28px;
+  line-height: 1;
+}
+
+#tutorialStatus {
+  margin-top: 20px;
+  color: #777;
+  font-size: 12px;
+}
+
+#tutorialStatus.success {
+  color: #e8a13d;
 }
 
 #overlay.dimmed {
   filter: grayscale(1) brightness(0.6);
 }
-</style>
-</head>
-<body>
-<div id="stage">
-  <video id="webcam" autoplay playsinline muted></video>
-  <canvas id="overlay" class="dimmed"></canvas>
-  <div id="chordDisplay">--</div>
-  <div id="volumeMeter">
-    <div class="vol-bar" data-index="7"></div>
-    <div class="vol-bar" data-index="6"></div>
-    <div class="vol-bar" data-index="5"></div>
-    <div class="vol-bar" data-index="4"></div>
-    <div class="vol-bar" data-index="3"></div>
-    <div class="vol-bar" data-index="2"></div>
-    <div class="vol-bar" data-index="1"></div>
-    <div class="vol-bar" data-index="0"></div>
-  </div>
-  <select id="keySelect">
-  <option value="220.00" data-note="A" selected>A</option>
-  <option value="233.08" data-note="Bb">A#/Bb</option>
-  <option value="246.94" data-note="B">B</option>
-  <option value="261.63" data-note="C">C</option>
-  <option value="277.18" data-note="Db">C#/Db</option>
-  <option value="293.66" data-note="D">D</option>
-  <option value="311.13" data-note="Eb">D#/Eb</option>
-  <option value="329.63" data-note="E">E</option>
-  <option value="349.23" data-note="F">F</option>
-  <option value="369.99" data-note="Gb">F#/Gb</option>
-  <option value="392.00" data-note="G">G</option>
-  <option value="415.30" data-note="Ab">G#/Ab</option>
-</select>
 
-<select id="toneSelect">
-  <option value="triangle" selected>Warm Synth</option>
-  <option value="sawtooth">Bright Synth</option>
-  <option value="square">Retro Synth</option>
-</select>
-<button id="guideToggle">Open Guide</button>
-<div id="gestureGuide" class="hidden"></div>
+.help-quick-controls {
+  box-sizing: border-box;
+  color: #ddd;
+}
+.help-quick-controls > h2 { color: #ddd; font-size: 18px; }
+.help-quick-controls .help-mode-label { color: #aaa; font-size: 12px; }
+.help-quick-controls .mode-button {
+  padding: 5px 0;
+  color: #bbb;
+  font-size: 12px;
+}
+.help-quick-controls .mode-button.active {
+  color: #fff;
+  background: #555;
+}
+.help-quick-controls .mode-button:hover,
+.help-quick-controls .mode-button.active:hover { color: #fff; }
+.help-quick-controls .help-mode p { font-size: 12px; }
+.help-quick-controls > .help-mode {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 2.35fr);
+  align-items: center;
+  column-gap: 8px;
+  padding: 12px;
+}
+.help-quick-controls .help-mode-label {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.help-quick-controls .mode-toggle {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: calc(100% + 8px);
+  max-width: none;
+  box-sizing: border-box;
+  justify-self: start;
+  margin-left: -8px;
+}
+.help-quick-controls .help-mode p {
+  grid-column: 2;
+  width: calc(100% + 8px);
+  margin: 8px 0 0 -8px;
+}
+
+.phone-navigation-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.phone-navigation-actions button,
+.phone-select-row select,
+.phone-select-row button {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px;
+  border: 1px solid #555;
+  border-radius: 5px;
+  color: #ddd;
+  background: #171717;
+  font: 12px monospace;
+}
+.phone-navigation-actions button,
+.phone-select-row button { cursor: pointer; }
+.phone-navigation-actions button:hover,
+.phone-select-row button:hover {
+  border-color: #aaa;
+  background: #1a1a1a;
+}
+.phone-select-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: stretch;
+  margin-bottom: 8px;
+}
+.phone-select-control {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  height: 40px;
+}
+.phone-select-control label {
+  color: #bbb;
+  font: 12px monospace;
+  white-space: nowrap;
+}
+.phone-select-row select,
+.phone-select-row button {
+  width: 100%;
+  height: 40px;
+}
+.phone-select-row button { padding: 6px 4px; }
+.phone-select-row select { padding: 6px 2px 6px 6px; }
+body:not(.song-tutorial-open) .phone-navigation-actions #phoneGuidedSongs { grid-column: 1 / -1; }
+body:not(.song-tutorial-open) #phoneBackSynth,
+body:not(.song-tutorial-open) #phoneBackSongs { display: none; }
+body.song-tutorial-open #phoneGuidedSongs { display: none; }
+
+@media (max-width: 600px) {
+  .help-content { padding: 16px; }
+
+  #songTutorialToggleButton { display: none; }
+  body.song-tutorial-open #volumeMeter { display: none !important; }
+  body.song-tutorial-open #keySelect,
+  body.song-tutorial-open #toneSelect,
+  body.song-tutorial-open #guideToggle,
+  body.song-tutorial-open #gestureGuide,
+  body.song-tutorial-open .creator-credit { display: none !important; }
+
+  #keySelect,
+  #toneSelect,
+  #guideToggle {
+    left: 12px;
+    width: 112px;
+    max-width: 112px;
+    transform: none;
+    font-size: 12px;
+  }
+  #keySelect { top: 12px; }
+  #toneSelect { top: 48px; }
+  #guideToggle { top: 84px; }
+
+  #gestureGuide { top: 120px; }
+  .gesture-guide-panel:nth-child(2) { top: 120px; }
+
+  #helpButton {
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    left: 14px;
+  }
+
+  .help-quick-controls > .help-mode { margin: 10px 0; padding: 12px; }
+  .help-quick-controls > .help-mode p { margin-bottom: 0; }
+  .help-quick-controls > h2 { margin: 0 0 10px; }
+  .help-quick-controls + h2 { margin-top: 20px; }
+
+  body.song-tutorial-open #tutorialPhraseLayer {
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    width: auto;
+  }
+
+  body.song-tutorial-open #tutorialTransport {
+    bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+    max-width: calc(100vw - 72px);
+  }
+
+  body.song-tutorial-open #tutorialChordCue {
+    bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.hidden {
+  display: none !important;
+}
+</style>
+  <script type="module" crossorigin src="/assets/index-B9uAiGXI.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-YbAQRoxl.css">
+</head>
+
+<body>
+
+<div id="stage">
+
+  <div id="soundHelp" class="sound-help hidden">
+  <div>
+    🔇 <strong>NO SOUND?</strong><br>
+    Check that <a href="https://www.wikihow.com/Turn-Off-Silent-Mode-on-iPhone" target="_blank" rel="noopener noreferrer">Silent Mode</a> is off and your volume is turned up.
+  </div>
+
+  <button id="soundHelpDismiss">Got it!</button>
+  </div>
+
+  <video id="webcam" autoplay playsinline muted></video>
+
+  <canvas id="overlay" class="dimmed"></canvas>
+
+  <div id="chordDisplay">--</div>
+
+  <div id="volumeMeter">
+    <div id="volumeFixedLabel">Volume: Fixed</div>
+
+    <div id="volumeBars">
+      <div class="vol-bar" data-index="7"></div>
+      <div class="vol-bar" data-index="6"></div>
+      <div class="vol-bar" data-index="5"></div>
+      <div class="vol-bar" data-index="4"></div>
+      <div class="vol-bar" data-index="3"></div>
+      <div class="vol-bar" data-index="2"></div>
+      <div class="vol-bar" data-index="1"></div>
+      <div class="vol-bar" data-index="0"></div>
+    </div>
+  </div>
+
+  <!-- KEY -->
+
+  <select id="keySelect">
+    <option value="220.00" data-note="A" selected>A</option>
+    <option value="233.08" data-note="Bb">A#/Bb</option>
+    <option value="246.94" data-note="B">B</option>
+    <option value="261.63" data-note="C">C</option>
+    <option value="277.18" data-note="Db">C#/Db</option>
+    <option value="293.66" data-note="D">D</option>
+    <option value="311.13" data-note="Eb">D#/Eb</option>
+    <option value="329.63" data-note="E">E</option>
+    <option value="349.23" data-note="F">F</option>
+    <option value="369.99" data-note="Gb">F#/Gb</option>
+    <option value="392.00" data-note="G">G</option>
+    <option value="415.30" data-note="Ab">G#/Ab</option>
+  </select>
+
+  <!-- TONE -->
+
+  <select id="toneSelect">
+    <option value="triangle" selected>Warm Synth</option>
+    <option value="sawtooth">Bright Synth</option>
+    <option value="square">Retro Synth</option>
+    <option value="dreamy">Dreamy ✨</option>
+    <option value="strings">Strings 🎻</option>
+    <option value="horns">Horns 🎺</option>
+  </select>
+
+  <!-- GUIDE -->
+
+  <button id="guideToggle">Close Guide</button>
+
+  <button id="songTutorialToggleButton" type="button">✨ new mode ✨</button>
+
+  <div id="gestureGuide"></div>
+
   <div id="qualityDisplay">--</div>
-  <div id="distortionDisplay">Filter: 0%</div>
+
+  <div class="creator-credit">
+    <div>made by</div>
+    <div>
+    <a
+      href="https://www.instagram.com/indecisive.eric/"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      @indecisive.eric
+    </a>
+    </div>
+  </div>
+
+  <div id="filterFixedLabel">
+    Filter: Fixed
+  </div>
+
+  <!-- HELP -->
 
   <button id="helpButton">?</button>
 
   <div id="helpModal" class="hidden">
+
     <div class="help-content">
+
       <button id="closeHelp">✕</button>
 
+      <section class="help-quick-controls" aria-label="Quick controls">
+        <h2>Quick Controls</h2>
+
+        <div class="phone-navigation-actions" aria-label="Quick navigation">
+          <button id="phoneGuidedSongs" type="button">✨ Guided Songs</button>
+          <button id="phoneBackSynth" type="button">Back to Synth</button>
+          <button id="phoneBackSongs" type="button">Back to Songs</button>
+        </div>
+
+        <div class="phone-select-row">
+          <div class="phone-select-control">
+            <label for="phoneKeySelect">Key</label>
+            <select id="phoneKeySelect" aria-label="Choose key"></select>
+          </div>
+          <div class="phone-select-control">
+            <label for="phoneToneSelect">Synth</label>
+            <select id="phoneToneSelect" aria-label="Choose synth"></select>
+          </div>
+          <button id="phoneOpenGuide" type="button">Open Guide</button>
+        </div>
+
+        <div class="help-mode">
+          <div class="help-mode-label">Playing mode</div>
+          <div class="mode-toggle">
+            <button id="twoHandedModeButton" class="mode-button active">Two-Handed</button>
+            <button id="oneHandedModeButton" class="mode-button">Left Hand Only</button>
+          </div>
+        </div>
+
+        <div class="help-mode">
+          <div class="help-mode-label">Pitch shift</div>
+          <div class="mode-toggle">
+            <button id="semitoneLowerButton" class="mode-button">Lower</button>
+            <button id="semitoneOnButton" class="mode-button">Raise</button>
+          </div>
+          <p>
+            Move your left hand toward the top or bottom of the screen
+            to shift the chord by one semitone.
+          </p>
+        </div>
+      </section>
+
       <h2>Gesture Synth Guide</h2>
-      <p>
-      Gesture Synth is an interactive musical instrument created by <a href="https://indecisiveeric.com">
-      Eric Wei</a>.
-      Use your hands to create chords, melodies, and sounds in real-time!
       
+      <p>
+        Gesture Synth is an interactive musical instrument created by
+        <a href="https://indecisiveeric.com">
+          Eric Wei
+        </a>.
+        Use your hands to create chords, melodies, and sounds in real-time!
       </p>
 
-      
+      <p class="privacy-link">
+        Read the <a href="https://www.indecisiveeric.com/gesture-synth/privacy">Privacy Statement</a>.
+      </p>
 
-      <h3>Left Hand</h3>
-      <p><b>Tilt</b><br>
-      Inward → Major<br>
-      Outward → Minor</p>
+      <div class="help-instructions">
 
-      <p><b>Fingers (Scale Degree)</b><br>
-      1 → I<br>
-      2 → II<br>
-      3 → III<br>
-      4 → IV<br>
-      5 → V<br>
-      Index + Pinky → VI<br>
-      Index + Pinky + Thumb → VII</p>
+      <div id="helpLeftContent" class="help-tab-content">
 
-      <h3>Right Hand</h3>
-      <p><b>Fingers (Chord Quality)</b><br>
-      1 → Root Position<br>
-      2 → 1st Inversion<br>
-      3 → Major/Minor 7th<br>
-      4 → Dominant/Diminished 7th</p>
+        <h3>Left Hand</h3>
 
-      <p><b>Octave</b><br>
-      Thumb In → higher octave<br>
-      Thumb Out → lower octave</p>
+        <p>
+          <b>Tilt</b><br>
+          Inward → Major<br>
+          Outward → Minor
+        </p>
 
-      <p><b>Tilt</b><br>
-      Inward → More Filter<br>
-      Outward → Less Filter</p>
+        <p>
+          <b>Fingers (Scale Degree)</b><br>
+          1 → I<br>
+          2 → II<br>
+          3 → III<br>
+          4 → IV<br>
+          5 → V<br>
+          Index + Pinky → VI<br>
+          Index + Pinky + Thumb → VII
+        </p>
 
-      <p><b>Height</b><br>
-      Higher → Louder<br>
-      Lower → Softer</p>
+        <p>
+          <b>Pitch Shift</b><br>
+          Top 50% → Raise 1 semitone<br>
+          Middle 30% → Normal<br>
+          Bottom 20% → Lower 1 semitone
+        </p>
 
-      <a href="https://www.instagram.com/p/DbH1BACxNCG/" target="_blank" rel="noopener noreferrer">
-        📹 Gesture Synth tutorial by Eric Wei on Instagram
+        <p>
+          Enable <b>Raise</b> or <b>Lower</b>, then move your left hand
+          toward the top or bottom of the screen to shift by one semitone.
+        </p>
+
+      </div>
+
+      <div
+        id="helpRightContent"
+        class="help-tab-content"
+      >
+
+        <h3>Right Hand</h3>
+
+        <p>
+          <b>Fingers (Chord Quality)</b><br>
+          1 → Root Position<br>
+          2 → 1st Inversion<br>
+          3 → Major/Minor 7th<br>
+          4 → Dominant/Diminished 7th
+        </p>
+
+        <p>
+          <b>Octave</b><br>
+          Thumb Out → Lower Octave<br>
+          Thumb In → Higher Octave
+        </p>
+
+        <p>
+          <b>Tilt</b><br>
+          Inward → More Filter<br>
+          Outward → Less Filter
+        </p>
+
+        <p>
+          <b>Height</b><br>
+          Higher → Louder<br>
+          Lower → Softer
+        </p>
+
+      </div>
+
+    </div>
+
+      <a
+        href="https://www.instagram.com/p/DbH1BACxNCG/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        📹 Gesture Synth Tutorial on Instagram
       </a>
 
     </div>
+
   </div>
 
+  <section id="songTutorialView" class="hidden" aria-label="Song Tutorial Player">
+    <div id="tutorialTransport">
+      <div id="tutorialModeToggle" role="radiogroup" aria-label="Tutorial playback mode">
+        <span class="tutorial-mode-indicator" aria-hidden="true"></span>
+        <button class="tutorial-mode-button" type="button" role="radio" aria-checked="true" data-tutorial-player-mode="pace">My Pace</button>
+        <button class="tutorial-mode-button" type="button" role="radio" aria-checked="false" data-tutorial-player-mode="auto">Auto-play</button>
+      </div>
+      <button id="tutorialPlayPauseButton" type="button" aria-label="Start My Pace playback">▶</button>
+      <span id="tutorialTempoLabel">BPM</span>
+      <input id="tutorialTempoInput" type="text" inputmode="numeric" value="120" aria-label="Tempo">
+      <span id="tutorialSongTitle">Twinkle, Twinkle, Little Star</span>
+      <a id="tutorialRequestButton" class="tutorial-transport-icon" href="https://forms.gle/gcoYxs9BMnEe7wWa9" target="_blank" rel="noopener noreferrer" aria-label="Request a song" title="Request a Song">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path class="request-bubble" d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l1.8-3.1A7.5 7.5 0 1 1 20 11.5Z"/><path class="request-plus" d="M12.5 8.5v6M9.5 11.5h6"/></svg>
+      </a>
+    </div>
+    <div id="tutorialPhraseLayer" aria-label="Song timeline"></div>
+    <div id="tutorialChordCue">
+      <div id="tutorialGestureHint">Play this chord</div>
+      <div class="tutorial-hand-cue left-hand" id="tutorialLeftHand"></div>
+      <div id="tutorialChordLabel"><span id="tutorialChordName"></span><span id="tutorialChordQuality"></span></div>
+      <div class="tutorial-hand-cue right-hand" id="tutorialRightHand"></div>
+    </div>
+    <div id="tutorialEmptyState" hidden></div>
+  </section>
+
+  <section id="guidedSongsOverlay" class="hidden" aria-label="Guided Songs">
+    <div class="guided-songs-card">
+      <p class="guided-songs-eyebrow">GESTURE SYNTH</p>
+      <h1>Guided Songs</h1>
+      <p>Choose a song to learn with hand gestures.</p>
+      <button id="guidedTwinkleButton" class="guided-song-button" type="button">
+        <span>Twinkle, Twinkle, Little Star</span>
+        <span aria-hidden="true">→</span>
+      </button>
+      <button id="guidedBackButton" class="guided-back-button" type="button">Back to Gesture Synth</button>
+    </div>
+  </section>
+
+  <div id="tutorialWalkthrough" class="hidden" aria-hidden="true">
+    <div class="tutorial-walkthrough-dim tutorial-walkthrough-dim-top"></div>
+    <div class="tutorial-walkthrough-dim tutorial-walkthrough-dim-left"></div>
+    <div class="tutorial-walkthrough-dim tutorial-walkthrough-dim-right"></div>
+    <div class="tutorial-walkthrough-dim tutorial-walkthrough-dim-bottom"></div>
+    <div id="tutorialWalkthroughSpotlight" class="tutorial-walkthrough-spotlight" aria-hidden="true"></div>
+
+    <section
+      id="tutorialWalkthroughCard"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tutorialWalkthroughTitle"
+      aria-describedby="tutorialWalkthroughDescription"
+    >
+      <p id="tutorialWalkthroughStep">Step 1 of 3</p>
+      <h2 id="tutorialWalkthroughTitle"></h2>
+      <p id="tutorialWalkthroughDescription"></p>
+      <div class="tutorial-walkthrough-actions">
+        <button id="tutorialWalkthroughSkip" type="button">Skip</button>
+        <button id="tutorialWalkthroughNext" type="button">Next</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="songRequestModal" class="hidden" role="dialog" aria-modal="true" aria-label="Request a Song">
+    <div class="song-request-content">
+      <button id="songRequestCloseButton" type="button" aria-label="Close">×</button>
+      <p>Have a song in mind? Let me know :)</p>
+      <a class="song-request-cta" href="https://forms.gle/gcoYxs9BMnEe7wWa9" target="_blank" rel="noopener noreferrer">Request a Song!</a>
+      <p class="song-request-disclaimer">Popular songs may require permission from<br>their rights holders before I can add them.</p>
+    </div>
+  </div>
+
+  <!-- =========================
+       LANDING SCREEN
+  ========================= -->
+
   <div id="startOverlay">
-    <div class="start-circle">▶</div>
-    <div class="start-text">
-    click to enable audio
-    <br>
-    <br>
-    <small>Created by Eric Wei 🙌</small>
+
+    <div class="start-card">
+
+      <div class="start-eyebrow">
+        GESTURE SYNTH
+      </div>
+
+      <h1>
+        make music with your hands 🙌
+      </h1>
+
+      <div class="start-actions">
+
+        <button
+          id="tutorialButton"
+          class="start-button secondary"
+        >
+          📖 tutorial
+        </button>
+
+        <button
+          id="playNowButton"
+          class="start-button primary"
+        >
+          🤘 play now
+        </button>
+
+        <button
+          id="supportButton"
+          class="start-button secondary"
+          aria-expanded="false"
+          aria-controls="supportPanel"
+        >
+          💛 support
+        </button>
+
+      </div>
+
+      <section id="supportPanel" class="support-panel" hidden aria-label="Support Gesture Synth">
+        <p>Gesture Synth started as a passion project<br>to make music more fun and accessible!<br><br>Seeing people enjoy it is already incredibly rewarding, and your support helps me bring more ideas to life. 🫶</p>
+        <div class="support-amounts" data-frequency="one-time">
+          <a class="start-button secondary support-link" data-amount="$3" href="https://buy.stripe.com/4gM5kCaz82en99x25Q3VC06" target="_top">$3</a>
+          <a class="start-button secondary support-link" data-amount="$5" href="https://buy.stripe.com/3cIfZgePodX5gBZ8ue3VC00" target="_top">$5</a>
+          <a class="start-button secondary support-link" data-amount="$10" href="https://buy.stripe.com/9B628q22C8CLgBZeSC3VC07" target="_top">$10</a>
+        </div>
+        <button id="supportFrequencyToggle" class="support-frequency-toggle" type="button">Want to support monthly?</button>
+        <p id="supportStatus" class="support-status" role="status" aria-live="polite"></p>
+      </section>
+
+      <div class="start-note">
+        Camera access is required to play.
+      </div>
+
+    </div>
+
   </div>
+
+  <!-- =========================
+       TUTORIAL OVERLAY
+  ========================= -->
+
+  <div id="tutorialOverlay" class="hidden">
+
+    <div class="tutorial-card">
+
+      <div class="tutorial-eyebrow">
+        QUICK TUTORIAL
+      </div>
+
+      <div id="tutorialStep">
+
+      </div>
+
+      <h2 id="tutorialTitle">
+
+      </h2>
+
+      <p id="tutorialDescription">
+
+      </p>
+      
+      <div id="tutorialVisual">
+
+      </div>
+
+      <div id="tutorialTheory"></div>
+
+      <div id="tutorialStatus">
+        waiting for your hands...
+      </div>
+
+    </div>
+
   </div>
+
 </div>
-<script type="module" src="/main.js"></script>
+
+
 </body>
 </html>
