@@ -1,4 +1,14 @@
 import { HandLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
+import {
+  FUNCTIONS,
+  FUNCTIONAL_TABLE,
+  classifyFunctionalDegree,
+  getFunctionalChord,
+  getFunctionalChordName,
+  getFunctionalFreqs,
+  getFunctionalNumeral,
+  toUprightLandmarks,
+} from "./functional.js";
 
 // ---- DOM references ----
 const videoEl = document.getElementById("webcam");
@@ -11,6 +21,24 @@ const chordDisplayEl = document.getElementById("chordDisplay");
 const volumeBarEls = Array.from(document.querySelectorAll(".vol-bar"));
 const qualityDisplayEl = document.getElementById("qualityDisplay");
 const startOverlayEl = document.getElementById("startOverlay");
+const modeSelectEl = document.getElementById("modeSelect");
+
+// ---- Play mode: "classic" (tilt picks major/minor) or "functional" ----
+const MODE_STORAGE_KEY = "gestureSynthMode";
+
+function loadSavedMode() {
+  try {
+    return localStorage.getItem(MODE_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+if (loadSavedMode() === "functional") {
+  modeSelectEl.value = "functional";
+}
+
+let currentMode = modeSelectEl.value;
 
 function trackClarityEvent(eventName) {
   if (typeof window.clarity === "function") {
@@ -76,6 +104,16 @@ function classifyChord(landmarks, handedness) {
   if (!base) return null;
 
   return quality === "major" ? base : base.toLowerCase();
+}
+
+function countExtendedFingers(landmarks, handedness) {
+  return [
+    isThumbExtended(landmarks, handedness),
+    isFingerExtended(landmarks, "index"),
+    isFingerExtended(landmarks, "middle"),
+    isFingerExtended(landmarks, "ring"),
+    isFingerExtended(landmarks, "pinky"),
+  ].filter(Boolean).length;
 }
 
 function getHandHorizontalTilt(landmarks, handedness) {
@@ -231,6 +269,9 @@ function drawEnergy(ctx, volume01, qualityIndex, tiltFactor, chordStr) {
 // Musical state: needs confidence before changing
 const CHORD_HOLD_TIME_MS = 100;
 
+// Functional mode's finger count when the right hand is out of frame.
+const RIGHT_HAND_ABSENT = -1;
+
 // Expression controls: should feel immediate
 const VIBE_NULL_WINDOW_MS = 50;
 // ============================
@@ -299,6 +340,13 @@ function stabilizeChordState(rawState, now) {
 
 
   return stableChordState;
+}
+
+function resetChordStabilizer() {
+  stableChordState = null;
+  candidateChordState = null;
+  candidateChordSince = 0;
+  lastChordSeenValidTime = 0;
 }
 
 // ---- Right hand: volume from height ----
@@ -390,10 +438,70 @@ const MAJOR_SCALE = {
   Ab: ["Ab","Bb","C","Db","Eb","F","G"]
 };
 
+// Left-hand gesture shown beside each row of the functional chord grid.
+const FUNCTIONAL_DEGREE_GESTURES = {
+  1: "1️⃣",
+  2: "2️⃣",
+  3: "3️⃣",
+  4: "4️⃣",
+  5: "5️⃣",
+  6: "1️⃣ tilt"
+};
+
+let highlightedGuideCell = null;
+
+// Functional mode guide: every hand combination as a chord in the current key.
+function renderFunctionalGuide(scale) {
+  const header = FUNCTIONS
+    .map(({ short }, fingers) => `
+      <th>${fingers === 0 ? "✊" : fingers}<small>${short}</small></th>
+    `)
+    .join("");
+
+  const rows = Object.entries(FUNCTIONAL_TABLE)
+    .map(([degree, cells]) => `
+      <tr>
+        <th>${FUNCTIONAL_DEGREE_GESTURES[degree]}</th>
+        ${cells
+          .map((cell, fingers) => cell
+            ? `<td data-cell="${degree}-${fingers}" title="${cell.roman}">${getFunctionalChordName(cell, scale)}</td>`
+            : "<td></td>")
+          .join("")}
+      </tr>
+    `)
+    .join("");
+
+  return `
+    <table class="functional-guide">
+      <thead><tr><th>L \\ R</th>${header}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+// Lights up the grid cell being played. cellKey is "degree-fingers" or null.
+function highlightFunctionalCell(cellKey) {
+  if (cellKey === highlightedGuideCell) return;
+
+  const previous = gestureGuideEl.querySelector("td.active");
+  if (previous) previous.classList.remove("active");
+
+  const next = cellKey && gestureGuideEl.querySelector(`[data-cell="${cellKey}"]`);
+  if (next) next.classList.add("active");
+
+  highlightedGuideCell = cellKey;
+}
+
 function updateGestureGuide() {
   if (!gestureGuideEl) return;
 
   const scale = MAJOR_SCALE[currentKeyName];
+
+  if (currentMode === "functional") {
+    gestureGuideEl.innerHTML = renderFunctionalGuide(scale);
+    highlightedGuideCell = null;
+    return;
+  }
 
   gestureGuideEl.innerHTML = GESTURE_GUIDE
     .map(({ degree, gesture }) => `
@@ -435,6 +543,18 @@ let currentKeyName =
 
 });
 
+modeSelectEl.addEventListener("change", () => {
+  currentMode = modeSelectEl.value;
+
+  try {
+    localStorage.setItem(MODE_STORAGE_KEY, currentMode);
+  } catch {}
+
+  // The two modes store different things in the chord state.
+  resetChordStabilizer();
+  updateGestureGuide();
+});
+
 const toneSelectEl = document.getElementById("toneSelect");
 let currentWaveform = toneSelectEl.value;
 
@@ -443,9 +563,7 @@ toneSelectEl.addEventListener("change", () => {
   synth.currentKey = null; // forces sound refresh
 });
 
-function getDegreeFreq(degree) {
-  const semitones = DEGREE_SEMITONES[degree];
-
+function getTonicFreq() {
   let tonic = currentTonicFreq;
 
   // Drop these keys one octave
@@ -457,7 +575,13 @@ function getDegreeFreq(degree) {
     tonic /= 2;
   }
 
-  return tonic * Math.pow(2, semitones / 12);
+  return tonic;
+}
+
+function getDegreeFreq(degree) {
+  const semitones = DEGREE_SEMITONES[degree];
+
+  return getTonicFreq() * Math.pow(2, semitones / 12);
 }
 
 const NUMERAL_TO_DEGREE = {
@@ -854,15 +978,34 @@ if (cachedLeftLandmarks) {
     );
 
 
-  rawChord =
-    classifyChord(
-      cachedLeftLandmarks,
-      "Left"
-    );
+  if (currentMode === "functional") {
+
+    // Quality comes from the key, so tilt is only used to reach degree 6.
+    const uprightLeft =
+      toUprightLandmarks(
+        cachedLeftLandmarks,
+        videoEl.videoWidth / videoEl.videoHeight || undefined
+      );
+
+    rawChord =
+      classifyFunctionalDegree(
+        countExtendedFingers(uprightLeft, "Left"),
+        leftTilt
+      );
+
+  } else {
+
+    rawChord =
+      classifyChord(
+        cachedLeftLandmarks,
+        "Left"
+      );
 
 
-  rawMode =
-    leftTilt >= 0;
+    rawMode =
+      leftTilt >= 0;
+
+  }
 
 }
 
@@ -882,6 +1025,13 @@ if (cachedRightLandmarks) {
       cachedRightLandmarks,
       "Right"
     );
+
+} else if (currentMode === "functional") {
+
+  // A closed right hand plays the triad here, so a missing hand needs its
+  // own value. Otherwise a hand coming back into frame would sound the
+  // triad until its real finger count settled.
+  rawQualityIndex = RIGHT_HAND_ABSENT;
 
 }
 
@@ -940,7 +1090,31 @@ if (rawChord) {
   // 4. UI UPDATE
   // ============================
 
-  if (currentChord) {
+  const isFunctional = currentMode === "functional";
+
+  // Functional mode: the two hands pick one cell of the chord table. With
+  // the right hand out of frame, show the degree's triad as a silent preview.
+  const functionIndex =
+    qualityIndex === RIGHT_HAND_ABSENT ? 0 : qualityIndex;
+
+  const functionalChord =
+    isFunctional && currentChord
+      ? getFunctionalChord(currentChord, functionIndex)
+      : null;
+
+  const functionalChordPlays =
+    Boolean(functionalChord) && qualityIndex !== RIGHT_HAND_ABSENT;
+
+  if (isFunctional) {
+    chordDisplayEl.textContent =
+      functionalChord
+        ? `${getFunctionalChordName(functionalChord, MAJOR_SCALE[currentKeyName])}(${functionalChord.roman})`
+        : "--";
+
+    highlightFunctionalCell(
+      functionalChordPlays ? `${currentChord}-${functionIndex}` : null
+    );
+  } else if (currentChord) {
   const chordName =
     getChordName(
       currentChord,
@@ -952,6 +1126,13 @@ if (rawChord) {
   } else {
     chordDisplayEl.textContent = "--";
   }
+
+  // Long functional labels such as "Gbmaj7(bIIImaj7)" shrink on narrow
+  // screens. Classic labels never pass 8 characters, so they are unaffected.
+  chordDisplayEl.classList.toggle(
+    "long",
+    chordDisplayEl.textContent.length > 8
+  );
 
 
   const MAJOR_LABELS = {
@@ -970,10 +1151,17 @@ if (rawChord) {
   };
 
 
-  const activeLabel =
+  let activeLabel =
     isMajorMode
       ? MAJOR_LABELS[qualityIndex]
       : MINOR_LABELS[qualityIndex];
+
+  if (isFunctional) {
+    activeLabel =
+      functionalChordPlays
+        ? FUNCTIONS[functionIndex].label
+        : null;
+  }
 
 
   qualityDisplayEl.textContent =
@@ -1028,32 +1216,50 @@ if (rawChord) {
     );
 
 
-    if (
-      currentChord &&
-      qualityIndex >= 1
-    ) {
+    // A closed right hand is a real chord in functional mode (the triad),
+    // but stays silent in classic mode.
+    const isAudible =
+      isFunctional
+        ? functionalChordPlays
+        : Boolean(currentChord && qualityIndex >= 1);
+
+    if (isAudible) {
 
       const chordTrackingKey =
-        `${currentChord}-${isMajorMode ? "major" : "minor"}-${qualityIndex}-${thumbDown ? "low" : "normal"}`;
+        `${isFunctional ? "functional-" : ""}${currentChord}-${isMajorMode ? "major" : "minor"}-${qualityIndex}-${thumbDown ? "low" : "normal"}`;
 
       if (chordTrackingKey !== lastTrackedChord) {
         lastTrackedChord = chordTrackingKey;
         trackClarityEvent("chord_changed");
       }
 
-      const tones =
-        getChordTones(
-          currentChord,
-          isMajorMode
-        );
+      let notes;
+
+      if (isFunctional) {
+
+        notes =
+          getFunctionalFreqs(
+            functionalChord,
+            getTonicFreq()
+          );
+
+      } else {
+
+        const tones =
+          getChordTones(
+            currentChord,
+            isMajorMode
+          );
 
 
-      let notes =
-        getSolidNotes(
-          tones,
-          qualityIndex,
-          isMajorMode
-        );
+        notes =
+          getSolidNotes(
+            tones,
+            qualityIndex,
+            isMajorMode
+          );
+
+      }
 
 
       if (thumbDown) {
@@ -1106,13 +1312,28 @@ if (rawChord) {
       : 0;
 
 
-  drawEnergy(
-    ctx,
-    volume,
-    qualityIndex,
-    tilt,
-    currentChord
-  );
+  if (isFunctional) {
+
+    // One line per function, starting at one so the triad is visible too.
+    drawEnergy(
+      ctx,
+      volume,
+      functionalChordPlays ? functionIndex + 1 : 0,
+      tilt,
+      functionalChordPlays ? getFunctionalNumeral(functionalChord) : null
+    );
+
+  } else {
+
+    drawEnergy(
+      ctx,
+      volume,
+      qualityIndex,
+      tilt,
+      currentChord
+    );
+
+  }
 
 
   requestAnimationFrame(loop);

@@ -126,9 +126,23 @@ html, body {
   z-index: 5;
 }
 
+#modeSelect {
+  position: absolute;
+  top: 84px;
+  left: 12px;
+  background: #1a1a1a;
+  color: #e8a13d;
+  border: 1px solid #3a3428;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+  padding: 4px 8px;
+  z-index: 5;
+}
+
 #guideToggle {
   position: absolute;
-  top: 90px;
+  top: 126px;
   left: 12px;
   background: #1a1a1a;
   color: #e8a13d;
@@ -143,7 +157,7 @@ html, body {
 
 #gestureGuide {
   position: absolute;
-  top: 128px;
+  top: 164px;
   left: 12px;
   display: flex;
   flex-direction: column;
@@ -174,6 +188,41 @@ html, body {
 .gesture-guide-gesture {
   font-size: 20px;
 }
+
+/* Functional mode guide: left-hand degree rows x right-hand function columns */
+.functional-guide {
+  border-collapse: collapse;
+  color: #fff;
+  font-size: 12px;
+}
+
+.functional-guide th,
+.functional-guide td {
+  padding: 4px 6px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.functional-guide th {
+  color: #e8a13d;
+  font-weight: normal;
+}
+
+.functional-guide thead th {
+  font-size: 14px;
+}
+
+.functional-guide th small {
+  display: block;
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.functional-guide td.active {
+  background: #e8a13d;
+  color: #111;
+  border-radius: 4px;
+}
 #chordDisplay {
   position: absolute;
   bottom: 35px;
@@ -184,7 +233,13 @@ html, body {
   font-family: monospace;
   font-weight: bold;
   text-shadow: 0 0 12px rgba(232, 161, 61, 0.6);
+  white-space: nowrap;
   pointer-events: none;
+}
+/* Long functional-mode labels: shrink on phones so they stay on screen and
+   clear of the help button. Has no effect above 600px wide. */
+#chordDisplay.long {
+  font-size: min(42px, 7vw);
 }
 #volumeMeter {
   position: absolute;
@@ -300,6 +355,11 @@ html, body {
   <option value="sawtooth">Bright Synth</option>
   <option value="square">Retro Synth</option>
 </select>
+
+<select id="modeSelect">
+  <option value="classic" selected>Classic Mode</option>
+  <option value="functional">Functional Mode</option>
+</select>
 <button id="guideToggle">Open Guide</button>
 <div id="gestureGuide" class="hidden"></div>
   <div id="qualityDisplay">--</div>
@@ -353,6 +413,25 @@ html, body {
       <p><b>Height</b><br>
       Higher → Louder<br>
       Lower → Softer</p>
+
+      <h3>Functional Mode</h3>
+      <p>Pick it from the mode menu (top left). Chords take their quality
+      from the key, so the left hand no longer tilts for major or minor.
+      Open the guide to see every hand combination in the current key.</p>
+
+      <p><b>Left Hand (Scale Degree)</b><br>
+      1 to 5 fingers → I, ii, iii, IV, V<br>
+      1 finger, hand tilted → vi<br>
+      Closed hand → silence</p>
+
+      <p><b>Right Hand (Function)</b><br>
+      Closed hand → Diatonic triad<br>
+      1 → Diatonic 7th<br>
+      2 → Secondary dominant (V7 of that degree)<br>
+      3 → Borrowed from the parallel minor<br>
+      4 → Borrowed 7th</p>
+
+      <p>Octave, filter and volume work the same in both modes.</p>
 
       <a href="https://www.instagram.com/p/DbH1BACxNCG/" target="_blank" rel="noopener noreferrer">
         📹 Gesture Synth tutorial by Eric Wei on Instagram
